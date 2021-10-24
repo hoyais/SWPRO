@@ -1,12 +1,16 @@
 package exam.stock;
 
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 
 class UserSolution {
 
     private static int MAX_NUM = 200000;
     private static int MAX_STOCK = 5;
+    private static int MAX_PRICE = 1000000;
+    public static boolean isDebug = false;
 
     class Order {
         int mNumber;
@@ -26,14 +30,33 @@ class UserSolution {
 
     HashMap<Integer, LinkedList<Order>> buyHash;
     HashMap<Integer, LinkedList<Order>> sellHash;
-    HashMap<Integer, LinkedList<Integer>> matchPriceHash;
+    int minPrice[];
+    int maxBenefit[];
     int orderStock[][];     // [mNumber][bsType]
+
+    public void printString(String method, int args) {
+//        if (isDebug) System.out.println(method + " : " + args);
+    }
+
+    public void printList(LinkedList<Integer> list) {
+//        if (list !=null && list.size()>0) {
+//            for (int i=0; i<list.size(); i++) {
+//                System.out.print(list.get(i) + " ");
+//            }
+//            System.out.println();
+//        }
+    }
+
+    public void printTime(String func) {
+        Date date = new Date();
+        System.out.println(func + " : " + date.getTime());
+    }
 
     public void init() {
         buyHash = new HashMap<>();
         sellHash = new HashMap<>();
-        matchPriceHash = new HashMap<>();
-
+        minPrice = new int[] {MAX_PRICE,MAX_PRICE,MAX_PRICE,MAX_PRICE,MAX_PRICE,MAX_PRICE};
+        maxBenefit = new int[6];
         orderStock = new int[MAX_NUM][2];
     }
 
@@ -121,6 +144,10 @@ class UserSolution {
             bsType = 2;
         };
 
+        if (cancelStock == 0) {
+            return;
+        }
+
         if (bsType == 1) {
             LinkedList<Order> list = buyHash.get(cancelStock);
 
@@ -149,29 +176,7 @@ class UserSolution {
     }
 
     public int bestProfit(int mStock) {
-        LinkedList<Integer> list = matchPriceHash.get(mStock);
-        int p = list.size();
-        int bVal = 0;
-        int mVal = 0;
-        int maxProfit = 0;
-        int profit = 0;
-
-        for (int i=p-1; i>0; i--) {
-            for (int j=i-1; j>=0; j--) {
-                bVal = list.get(i);
-                mVal = list.get(j);
-
-                if (bVal > mVal) {
-                    profit = bVal - mVal;
-
-                    if (maxProfit >= profit) {
-                        continue;
-                    }
-                    maxProfit = profit;
-                }
-            }
-        }
-        return maxProfit;
+        return maxBenefit[mStock];
     }
 
     public Order bsProcess(Order ord, int bsType) {
@@ -188,8 +193,10 @@ class UserSolution {
         }
 
         if (bsList != null && bsList.size()>0) {
-            for (int i=0; i<bsList.size(); i++) {
-                Order marketOrd = bsList.get(i);
+            Iterator<Order> iter = bsList.iterator();
+
+            while (iter.hasNext()) {
+                Order marketOrd = iter.next();
 
                 if (bsType == 1) {  // buy
                     if (ord.mPrice >= marketOrd.mPrice && marketOrd.mQuantity > 0) {
@@ -197,12 +204,13 @@ class UserSolution {
                         if (ord.mQuantity >= marketOrd.mQuantity) {
                             ord.mQuantity = ord.mQuantity - marketOrd.mQuantity;
                             marketOrd.mQuantity = 0;
+                            iter.remove();
                         } else {
                             marketOrd.mQuantity = marketOrd.mQuantity - ord.mQuantity;
                             ord.mQuantity = 0;
                         }
                         // add match price in matchPricehash
-                        addMatchPriceHash(marketOrd.mStock, marketOrd.mPrice);
+                        addMatchPrice(marketOrd.mStock, marketOrd.mPrice);
                     }
                 } else {    // sell
                     if (ord.mPrice <= marketOrd.mPrice && marketOrd.mQuantity > 0) {
@@ -210,12 +218,13 @@ class UserSolution {
                         if (ord.mQuantity >= marketOrd.mQuantity) {
                             ord.mQuantity = ord.mQuantity - marketOrd.mQuantity;
                             marketOrd.mQuantity = 0;
+                            iter.remove();
                         } else {
                             marketOrd.mQuantity = marketOrd.mQuantity - ord.mQuantity;
                             ord.mQuantity = 0;
                         }
                         // add match price in matchPricehash
-                        addMatchPriceHash(marketOrd.mStock, marketOrd.mPrice);
+                        addMatchPrice(marketOrd.mStock, marketOrd.mPrice);
                     }
                 }
                 if (ord.mQuantity == 0) break;
@@ -224,14 +233,15 @@ class UserSolution {
         return ord;
     }
 
-    public void addMatchPriceHash(int mStock, int mPrice) {
-        LinkedList<Integer> list = matchPriceHash.get(mStock);
+    public void addMatchPrice(int mStock, int mPrice) {
+        if (minPrice[mStock] > mPrice) {
+            minPrice[mStock] = mPrice;
+        }
 
-        if (list == null || list.size() == 0) {
-            list = new LinkedList<>();
-            list.add(mPrice);
-        } else {
-            list.add(mPrice);
+        if (minPrice[mStock] > 0) {
+            if (maxBenefit[mStock] < (mPrice - minPrice[mStock])) {
+                maxBenefit[mStock] = mPrice - minPrice[mStock];
+            }
         }
     }
 }
