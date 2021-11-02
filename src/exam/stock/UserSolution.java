@@ -1,9 +1,6 @@
 package exam.stock;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.*;
 
 class UserSolution {
 
@@ -12,7 +9,7 @@ class UserSolution {
     private static int MAX_PRICE = 1000000;
     public static boolean isDebug = false;
 
-    class Order {
+    class Order implements Comparable<Order> {
         int mNumber;
         int mStock;
         int mQuantity;
@@ -26,10 +23,34 @@ class UserSolution {
             this.mPrice = mPrice;
             this.bsType = bsType;
         }
+
+        @Override
+        public int compareTo(Order pqOrder) {
+            int rtn = 0;
+
+            if (this.bsType == 1) {
+                // add order by High Price - Small mNumber
+                if (this.mPrice > pqOrder.mPrice ||
+                        (this.mPrice == pqOrder.mPrice && this.mNumber < pqOrder.mNumber)) {
+                    rtn = 1;
+                } else {
+                    rtn = -1;
+                }
+            } else {
+                // add order by Lower Price - Small mNumber
+                if (this.mPrice < pqOrder.mPrice ||
+                        (this.mPrice == pqOrder.mPrice && this.mNumber < pqOrder.mNumber)) {
+                    rtn = 1;
+                } else {
+                    rtn = -1;
+                }
+            }
+            return rtn;
+        }
     }
 
-    HashMap<Integer, LinkedList<Order>> buyHash;
-    HashMap<Integer, LinkedList<Order>> sellHash;
+    HashMap<Integer, PriorityQueue<Order>> buyHash;
+    HashMap<Integer, PriorityQueue<Order>> sellHash;
     int minPrice[];
     int maxBenefit[];
     int orderStock[][];     // [mNumber][bsType]
@@ -67,30 +88,15 @@ class UserSolution {
         ord = bsProcess(ord, 1);
         int remainQty = ord.mQuantity;
         if (remainQty > 0) {
-            LinkedList<Order> list;
+            PriorityQueue<Order> pq;
             if (buyHash.get(mStock) == null) {
-                list = new LinkedList<>();
-                list.add(ord);
+                pq = new PriorityQueue<>();
+                pq.offer(ord);
             } else {
-                list = buyHash.get(mStock);
-                boolean addFlag = false;
-                for (int i=0; i<list.size(); i++) {
-                    Order curData = list.get(i);
-
-                    // add order by High Price - Small mNumber
-                    if (ord.mPrice > curData.mPrice ||
-                            (ord.mPrice == curData.mPrice && ord.mNumber < curData.mNumber)) {
-                        list.add(i, ord);
-                        addFlag = true;
-                        break;
-                    }
-                }
-
-                if (!addFlag) {
-                    list.add(ord);
-                }
+                pq = buyHash.get(mStock);
+                pq.offer(ord);
             }
-            buyHash.put(mStock, list);
+            buyHash.put(mStock, pq);
         }
         return remainQty;
     }
@@ -102,30 +108,15 @@ class UserSolution {
         ord = bsProcess(ord, 2);
         int remainQty = ord.mQuantity;
         if (remainQty > 0) {
-            LinkedList<Order> list;
+            PriorityQueue<Order> pq;
             if (sellHash.get(mStock) == null) {
-                list = new LinkedList<>();
-                list.add(ord);
+                pq = new PriorityQueue<>();
+                pq.offer(ord);
             } else {
-                list = sellHash.get(mStock);
-                boolean addFlag = false;
-                for (int i=0; i<list.size(); i++) {
-                    Order curData = list.get(i);
-
-                    // add order by Lower Price - Small mNumber
-                    if (ord.mPrice < curData.mPrice ||
-                            (ord.mPrice == curData.mPrice && ord.mNumber < curData.mNumber)) {
-                        list.add(i, ord);
-                        addFlag = true;
-                        break;
-                    }
-                }
-
-                if (!addFlag) {
-                    list.add(ord);
-                }
+                pq = sellHash.get(mStock);
+                pq.offer(ord);
             }
-            sellHash.put(mStock, list);
+            sellHash.put(mStock, pq);
         }
         return remainQty;
     }
