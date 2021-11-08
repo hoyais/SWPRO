@@ -7,7 +7,7 @@ class UserSolution {
     private static int MAX_NUM = 200000;
     private static int MAX_STOCK = 5;
     private static int MAX_PRICE = 1000000;
-    public static boolean isDebug = false;
+    public static boolean isDebug = true;
 
     class Order implements Comparable<Order> {
         int mNumber;
@@ -47,43 +47,40 @@ class UserSolution {
             }
             return rtn;
         }
+
+        @Override
+        public String toString() {
+            return "Order{" +
+                    "mNumber=" + mNumber +
+                    ", mStock=" + mStock +
+                    ", mQuantity=" + mQuantity +
+                    ", mPrice=" + mPrice +
+                    ", bsType=" + bsType +
+                    '}';
+        }
     }
 
     HashMap<Integer, PriorityQueue<Order>> buyHash;
     HashMap<Integer, PriorityQueue<Order>> sellHash;
     int minPrice[];
     int maxBenefit[];
-    int orderStock[][];     // [mNumber][bsType] - bsTeyp - 1:buy, 2:sell, 3:cancel
+    int orderStock[];     // [mNumber] = [bsType] 1:buy, 2:sell, 3:cancel
 
-    public void printString(String method, int args) {
+//    public void printString(String method, int args) {
 //        if (isDebug) System.out.println(method + " : " + args);
-    }
-
-    public void printList(LinkedList<Integer> list) {
-//        if (list !=null && list.size()>0) {
-//            for (int i=0; i<list.size(); i++) {
-//                System.out.print(list.get(i) + " ");
-//            }
-//            System.out.println();
-//        }
-    }
-
-    public void printTime(String func) {
-        Date date = new Date();
-        System.out.println(func + " : " + date.getTime());
-    }
+//    }
 
     public void init() {
         buyHash = new HashMap<>();
         sellHash = new HashMap<>();
         minPrice = new int[] {MAX_PRICE,MAX_PRICE,MAX_PRICE,MAX_PRICE,MAX_PRICE,MAX_PRICE};
         maxBenefit = new int[6];
-        orderStock = new int[MAX_NUM][2];
+        orderStock = new int[MAX_NUM];
     }
 
     public int buy(int mNumber, int mStock, int mQuantity, int mPrice) {
         Order ord = new Order(mNumber, mStock, mQuantity, mPrice, 1);
-        orderStock[mNumber][1] = mStock;
+        orderStock[mNumber] = 1;
 
         ord = bsProcess(ord, 1);
         int remainQty = ord.mQuantity;
@@ -98,12 +95,15 @@ class UserSolution {
             }
             buyHash.put(mStock, pq);
         }
+
+//        printString("buy : ", remainQty);
         return remainQty;
     }
 
     public int sell(int mNumber, int mStock, int mQuantity, int mPrice) {
-        Order ord = new Order(mNumber, mStock, mQuantity, mPrice, 1);
-        orderStock[mNumber][0] = mStock;
+//        printString("sell start : ", mQuantity);
+        Order ord = new Order(mNumber, mStock, mQuantity, mPrice, 2);
+        orderStock[mNumber] = 2;
 
         ord = bsProcess(ord, 2);
         int remainQty = ord.mQuantity;
@@ -118,14 +118,16 @@ class UserSolution {
             }
             sellHash.put(mStock, pq);
         }
+//        printString("sell : ", remainQty);
         return remainQty;
     }
 
     public void cancel(int mNumber) {
-        orderStock[mNumber][1] = 3;     // bsType - 1:buy, 2:sell, 3:cancel
+        orderStock[mNumber] = 3;     // bsType - 1:buy, 2:sell, 3:cancel
     }
 
     public int bestProfit(int mStock) {
+//        printString("bestProfit : ", maxBenefit[mStock]);
         return maxBenefit[mStock];
     }
 
@@ -143,10 +145,16 @@ class UserSolution {
         }
 
         if (pq != null && pq.size()>0) {
-            Iterator<Order> iter = pq.iterator();
+            while (!pq.isEmpty()) {
+                Order marketOrd = pq.poll();
 
-            while (iter.hasNext()) {
-                Order marketOrd = iter.next();
+                if (orderStock[marketOrd.mNumber] == 3) {
+//                    System.out.println("cancel marketOrd : " + marketOrd);
+                    continue;
+                }
+
+//                System.out.println("bsProcess bsType : " + bsType + " order " + ord);
+//                System.out.println("bsProcess " + marketOrd);
 
                 if (bsType == 1) {  // buy
                     if (ord.mPrice >= marketOrd.mPrice && marketOrd.mQuantity > 0) {
@@ -154,13 +162,21 @@ class UserSolution {
                         if (ord.mQuantity >= marketOrd.mQuantity) {
                             ord.mQuantity = ord.mQuantity - marketOrd.mQuantity;
                             marketOrd.mQuantity = 0;
-                            iter.remove();
                         } else {
                             marketOrd.mQuantity = marketOrd.mQuantity - ord.mQuantity;
                             ord.mQuantity = 0;
                         }
+
+                        if (marketOrd.mQuantity > 0) {
+                            pq.offer(marketOrd);
+                            sellHash.put(marketOrd.mStock, pq);
+                        }
+
                         // add match price in matchPricehash
                         addMatchPrice(marketOrd.mStock, marketOrd.mPrice);
+                    } else {
+                        pq.offer(marketOrd);
+                        break;
                     }
                 } else {    // sell
                     if (ord.mPrice <= marketOrd.mPrice && marketOrd.mQuantity > 0) {
@@ -168,16 +184,27 @@ class UserSolution {
                         if (ord.mQuantity >= marketOrd.mQuantity) {
                             ord.mQuantity = ord.mQuantity - marketOrd.mQuantity;
                             marketOrd.mQuantity = 0;
-                            iter.remove();
                         } else {
                             marketOrd.mQuantity = marketOrd.mQuantity - ord.mQuantity;
                             ord.mQuantity = 0;
                         }
+
+                        if (marketOrd.mQuantity > 0) {
+                            pq.offer(marketOrd);
+                            buyHash.put(marketOrd.mStock, pq);
+                        }
+
                         // add match price in matchPricehash
                         addMatchPrice(marketOrd.mStock, marketOrd.mPrice);
+                    } else {
+                        pq.offer(marketOrd);
+                        break;
                     }
                 }
-                if (ord.mQuantity == 0) break;
+
+                if (ord.mQuantity == 0) {
+                    break;
+                }
             }
         }
         return ord;
