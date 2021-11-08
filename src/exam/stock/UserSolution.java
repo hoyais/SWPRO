@@ -30,16 +30,16 @@ class UserSolution {
 
             if (this.bsType == 1) {
                 // add order by High Price - Small mNumber
-                if (this.mPrice > pqOrder.mPrice ||
-                        (this.mPrice == pqOrder.mPrice && this.mNumber < pqOrder.mNumber)) {
+                if (this.mPrice < pqOrder.mPrice ||
+                        (this.mPrice == pqOrder.mPrice && this.mNumber > pqOrder.mNumber)) {
                     rtn = 1;
                 } else {
                     rtn = -1;
                 }
             } else {
                 // add order by Lower Price - Small mNumber
-                if (this.mPrice < pqOrder.mPrice ||
-                        (this.mPrice == pqOrder.mPrice && this.mNumber < pqOrder.mNumber)) {
+                if (this.mPrice > pqOrder.mPrice ||
+                        (this.mPrice == pqOrder.mPrice && this.mNumber > pqOrder.mNumber)) {
                     rtn = 1;
                 } else {
                     rtn = -1;
@@ -53,7 +53,7 @@ class UserSolution {
     HashMap<Integer, PriorityQueue<Order>> sellHash;
     int minPrice[];
     int maxBenefit[];
-    int orderStock[][];     // [mNumber][bsType]
+    int orderStock[][];     // [mNumber][bsType] - bsTeyp - 1:buy, 2:sell, 3:cancel
 
     public void printString(String method, int args) {
 //        if (isDebug) System.out.println(method + " : " + args);
@@ -122,48 +122,7 @@ class UserSolution {
     }
 
     public void cancel(int mNumber) {
-        int cancelStock;
-        int bsType;
-
-        if (orderStock[mNumber][1] > 0) {   // buy order cancel
-            cancelStock = orderStock[mNumber][1];
-            orderStock[mNumber][1] = 0;
-            bsType = 1;
-        } else {    // sell order cancel
-            cancelStock = orderStock[mNumber][0];
-            orderStock[mNumber][0] = 0;
-            bsType = 2;
-        };
-
-        if (cancelStock == 0) {
-            return;
-        }
-
-        if (bsType == 1) {
-            LinkedList<Order> list = buyHash.get(cancelStock);
-
-            for (int i=0; i<list.size(); i++) {
-                Order order = list.get(i);
-
-                if (order.mNumber == mNumber) {
-                    list.remove(i);
-                    break;
-                }
-            }
-            buyHash.put(cancelStock, list);
-        } else {
-            LinkedList<Order> list = sellHash.get(cancelStock);
-
-            for (int i=0; i<list.size(); i++) {
-                Order order = list.get(i);
-
-                if (order.mNumber == mNumber) {
-                    list.remove(i);
-                    break;
-                }
-            }
-            sellHash.put(cancelStock, list);
-        }
+        orderStock[mNumber][1] = 3;     // bsType - 1:buy, 2:sell, 3:cancel
     }
 
     public int bestProfit(int mStock) {
@@ -172,19 +131,19 @@ class UserSolution {
 
     public Order bsProcess(Order ord, int bsType) {
         // checkSell hash by stock
-        LinkedList<Order> bsList;
+        PriorityQueue<Order> pq;
 
         // 1:buy, 2:sell, 3:cancel
         if (bsType == 1) {
-            bsList = sellHash.get(ord.mStock);
+            pq = sellHash.get(ord.mStock);
         } else if (bsType == 2) {
-            bsList = buyHash.get(ord.mStock);
+            pq = buyHash.get(ord.mStock);
         } else {
-            bsList = null;
+            pq = null;
         }
 
-        if (bsList != null && bsList.size()>0) {
-            Iterator<Order> iter = bsList.iterator();
+        if (pq != null && pq.size()>0) {
+            Iterator<Order> iter = pq.iterator();
 
             while (iter.hasNext()) {
                 Order marketOrd = iter.next();
