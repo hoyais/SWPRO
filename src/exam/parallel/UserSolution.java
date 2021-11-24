@@ -65,6 +65,8 @@ class UserSolution {
     public void processWorking(int timestamp) {
         // working job
         for (int i=currTime; i<timestamp; i++) {
+            // need to set processor
+
             Iterator<Task> iter = tlist.iterator();
 
             while (iter.hasNext()) {
