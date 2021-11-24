@@ -1,6 +1,7 @@
 package exam.parallel;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 
 class UserSolution {
@@ -51,21 +52,34 @@ class UserSolution {
     }
 
     void addProcessors(int timestamp, int mProcessors) {
+        processWorking(timestamp);
+
     }
 
     int getTaskOperations(int timestamp, char mTask[]) {
-        return -1;
+        processWorking(timestamp);
+        String sTask = String.valueOf(mTask);
+        return thash.get(sTask).mOperation;
     }
 
     public void processWorking(int timestamp) {
         // working job
         for (int i=currTime; i<timestamp; i++) {
-            processing(i);
-        }
-    }
+            Iterator<Task> iter = tlist.iterator();
 
-    public void processing(int timestamp) {
-        // task working
+            while (iter.hasNext()) {
+                Task task = iter.next();
+
+                if (task.status == 1) {
+                    task.mOperation = task.mOperation - task.processorCnt;
+                }
+
+                if (task.mOperation <=0) {
+                    task.mOperation = 0;
+                    task.status = 2;
+                }
+            }
+        }
     }
 
     public Task setProcess(Task task) {
@@ -79,16 +93,6 @@ class UserSolution {
         }
 
         return task;
-    }
-
-    public static long getLong(char in[]) {
-        long rval = 0;
-        int i=0;
-
-        while (in[i] != '\0') {
-            rval = (rval<<5) + (in[i]-'a'+1);
-        }
-        return rval;
     }
 }
 
