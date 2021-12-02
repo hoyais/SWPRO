@@ -14,7 +14,7 @@ public class PriorityQueueTest {
 
         @Override
         public int compareTo(Student target) {
-            return this.age < target.age ? 1 : - 1;
+            return this.age > target.age ? -1 : 1;
         }
 
         @Override
