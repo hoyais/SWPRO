@@ -7,7 +7,6 @@ import java.util.StringTokenizer;
 class Solution {
 
     private final static int MAX_LEN = 10;
-
     private final static int INIT = 100;
     private final static int NEW_TASK = 200;
     private final static int ADD_PROCESSORS = 300;

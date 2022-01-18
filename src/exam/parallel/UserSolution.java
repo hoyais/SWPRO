@@ -1,4 +1,4 @@
-package swpro4.parallel;
+package exam.parallel;
 
 import java.util.*;
 
